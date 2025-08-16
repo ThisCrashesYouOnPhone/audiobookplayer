@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Ultimate Audiobook Player — Private, Offline, Chapter‑Aware</title>
+<meta name="description" content="Ultimate Audiobook Player — a private, offline-first audiobook web app. Chapters, bookmarks, covers, resume position. Nothing uploads; everything runs in your browser." />
+<meta name="theme-color" content="#0e1a18" />
+<meta name="color-scheme" content="dark" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Ultimate Audiobook Player" />
+<meta property="og:description" content="A private, offline-first audiobook player. Chapters, bookmarks, covers, resume — all in your browser." />
+<meta property="og:url" content="https://example.com/" />
+<meta property="og:image" content="https://example.com/og-image.png" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Ultimate Audiobook Player" />
+<meta name="twitter:description" content="Private, offline-first audiobook player. Chapters, bookmarks, covers, resume — no uploads." />
+<meta name="twitter:image" content="https://example.com/og-image.png" />
+
+<!-- Icons (inline favicon; replace URLs with your assets when ready) -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2300b3a4'/%3E%3Cstop offset='100%25' stop-color='%231dd6c8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='12' fill='url(%23g)'/%3E%3Cpath d='M20 18h8v28h-8zM36 23h8v18h-8z' fill='white' opacity='.9'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="manifest" href="manifest.json" />
+
+<style>
+  :root{
+    --bg:#0e1a18; --panel:#122826; --panel-2:#0f2422;
+    --accent:#00b3a4; --accent-2:#1dd6c8; --text:#e7f6f4; --muted:#9ac0bc;
+    --warn:#ffd166; --radius:18px; --shadow:0 12px 24px rgba(0,0,0,.35);
+    --lift: rgba(255,255,255,.06);
+  }
+  html { color-scheme: dark; }
+  html,body{height:100%}
+  body{
+    margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color:var(--text);
+    background: radial-gradient(1000px 800px at 70% -5%, #0a1312 0%, var(--bg) 60%),linear-gradient(180deg, #0a1413, var(--bg));
+  }
+  .container{max-width:1200px;margin:clamp(12px,4vh,32px) auto;padding:16px}
+  .app{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;gap:16px;background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0))}
+  header h1{font-size:clamp(20px,2.6vw,26px);margin:0;font-weight:800;letter-spacing:.2px}
+  .badge{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(0,179,164,.15);color:var(--accent-2);border:1px solid rgba(0,179,164,.35);white-space:nowrap}
+  .grid{display:grid;grid-template-columns:360px 1fr;gap:14px;padding:14px}
+  @media (max-width: 980px){.grid{grid-template-columns:1fr}}
+  .panel{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:calc(var(--radius) - 8px);padding:14px}
+  .drop{cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;gap:10px;text-align:center;border:1.5px dashed rgba(255,255,255,.18);border-radius:14px;background:rgba(0,0,0,.15);transition:.15s ease}
+  .drop:hover{border-color:var(--accent-2);box-shadow:inset 0 0 0 1px rgba(29,214,200,.25)}
+  .drop.drag{border-color:var(--accent);background:rgba(0,179,164,.08)}
+  .hint{color:var(--muted);font-size:13px}
+  .row{display:flex;gap:10px;align-items:center}
+  .grow{flex:1}
+
+  button.icon, .icon-btn{
+    appearance:none;border:none;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+    color:var(--text);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;
+    display:inline-flex;gap:8px;align-items:center;font-weight:700;letter-spacing:.2px;transition:.15s ease;
+    box-shadow:0 6px 16px rgba(0,0,0,.25); cursor: pointer;
+  }
+  button.icon:hover, .icon-btn:hover{transform:translateY(-1px);border-color:rgba(0,179,164,.45);box-shadow:0 10px 20px rgba(0,0,0,.35)}
+  button.primary{background:linear-gradient(180deg, rgba(0,179,164,.22), rgba(0,179,164,.08));border-color:rgba(0,179,164,.45)}
+  .icon-btn{color-scheme: dark; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); color:var(--text);}
+  .icon-btn option{background:var(--panel-2); color:var(--text);} /* improves Firefox popup contrast */
+
+  .range{appearance:none;width:100%;height:10px;border-radius:999px;background:rgba(255,255,255,.08);outline:none}
+  .range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 30% 30%, var(--accent-2), var(--accent));border:2px solid rgba(255,255,255,.6);box-shadow:0 0 0 6px rgba(0,179,164,.15);cursor:pointer}
+  .range::-moz-range-thumb{width:18px;height:18px;border:none;border-radius:50%;background:var(--accent);cursor:pointer}
+
+  .progress{height:12px;background:rgba(255,255,255,.06);border-radius:999px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.05)}
+  .progress .buffered{position:absolute;top:0;left:0;height:100%;background:rgba(255,255,255,.12)}
+  .progress .played{position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+  .progress input{position:absolute;left:0;top:-6px;width:100%;height:24px;opacity:0;cursor:pointer}
+  .markers{position:absolute;inset:0;pointer-events:none}
+  .marker{position:absolute;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--accent-2),var(--accent));opacity:.8}
+  .marker.small{width:1px;opacity:.55}
+
+  .list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto;padding-right:4px}
+  .item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.03); transition: .15s ease;}
+  .item:hover{border-color:rgba(0,179,164,.35); background:rgba(0,179,164,.06);}
+  .meta{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .title{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+  .sub{font-size:12px;color:var(--muted)}
+  .time{font-variant-numeric:tabular-nums}
+  .cover{width:56px;height:56px;border-radius:12px;background:#0a1413;border:1px solid rgba(255,255,255,.08);object-fit:cover;flex:none}
+  .pill{padding:3px 8px;border-radius:999px;background:rgba(0,179,164,.14);color:var(--accent-2);font-weight:800;letter-spacing:.4px;font-size:11px}
+  .section-title{font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);margin:0 0 6px 2px}
+  .note{font-size:12px;color:var(--muted)}
+  footer{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid rgba(255,255,255,.06);color:var(--muted);font-size:12px}
+  .ring{position:relative;width:44px;height:44px}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
+
+  .now{display:grid;grid-template-columns:160px 1fr;gap:16px} /* bigger cover column */
+  .np-cover{width:160px;height:160px;border-radius:14px;background:#0a1413;border:1px solid rgba(255,255,255,.08);object-fit:cover}
+  #npTitle{font-size:20px;font-weight:800;letter-spacing:.2px}
+  #npAuthor{font-size:14px;color:var(--muted);font-weight:600}
+  #npDesc{
+    margin-top:8px; font-size:14px; line-height:1.5; color:var(--text);
+    max-height:92px; overflow:auto; padding-right:6px;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.2) transparent;
+  }
+  #npDesc::-webkit-scrollbar{width:8px} 
+  #npDesc::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18); border-radius:8px}
+
+  .tabs{display:flex;gap:6px;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:8px}
+  .tab{padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:700;color:var(--muted);transition:.15s ease}
+  .tab:hover{background:rgba(255,255,255,.04);color:var(--text)}
+  .tab.active{background:rgba(0,179,164,.14);color:var(--accent-2);box-shadow:inset 0 0 0 1px rgba(0,179,164,.25)}
+  .tab-content{display:none}.tab-content.active{display:block}
+  input.search{width:100%;padding:10px 14px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:12px;font-size:14px;margin-bottom:8px;}
+  .hidden{display:none!important}
+  .bookmark-item .meta {cursor:pointer}
+  .need-file{background:rgba(255,255,255,.05); color:#fff; border:1px dashed rgba(255,255,255,.25)}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="app">
+    <header>
+      <div class="row" style="gap:12px;align-items:center">
+        <div class="badge">Local · Private · Offline</div>
+        <h1>Ultimate Audiobook Player</h1>
+      </div>
+      <div class="row">
+        <span class="pill">Chapters</span>
+        <span class="pill">Bookmarks</span>
+        <span class="pill">MP3 · M4B · OGG · OPUS</span>
+      </div>
+    </header>
+    <div class="grid">
+      <div class="panel">
+        <div class="drop" id="drop">
+          <div style="font-size:15px;font-weight:800">Drop files or click to add</div>
+          <div class="hint">.m4b, .mp3, .m4a, .ogg, .opus, etc. Nothing leaves your browser.</div>
+          <div class="row" style="margin-top:6px">
+            <button id="addBtn" class="icon primary">Add to Library</button>
+            <input id="pick" type="file" accept="audio/*,.m4b" multiple style="display:none">
+          </div>
+        </div>
+        <div style="height:12px"></div>
+        <input type="search" id="search" class="search" placeholder="Search library...">
+        <h3 class="section-title">Library</h3>
+        <div id="lib" class="list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="now">
+          <img id="npCover" class="np-cover" alt="cover">
+          <div>
+            <div class="row" style="justify-content:space-between;align-items:start">
+              <div>
+                <div id="npTitle">No file loaded</div>
+                <div id="npAuthor" class="sub">—</div>
+              </div>
+              <div class="ring" title="Progress">
+                <svg width="44" height="44" viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="18" stroke="rgba(255,255,255,.08)" stroke-width="6" fill="none"></circle>
+                  <circle id="ringProg" cx="22" cy="22" r="18" stroke="url(#grad)" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="113.1"></circle>
+                  <defs><linearGradient id="grad" x1="0" y="0" x2="1" y2="1"><stop offset="0%" stop-color="var(--accent)"></stop><stop offset="100%" stop-color="var(--accent-2)"></stop></linearGradient></defs>
+                </svg>
+                <div class="pct" id="ringPct">0%</div>
+              </div>
+            </div>
+            <div id="npDesc" class="note">Description appears here.</div>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+        <div class="progress" id="progress">
+          <div class="buffered" id="buffered"></div>
+          <div class="played" id="played"></div>
+          <div class="markers" id="chMarkers"></div>
+          <input id="seek" type="range" min="0" max="100" value="0" step="0.01" aria-label="Seek">
+        </div>
+        <div class="row" style="justify-content:space-between;margin:8px 2px 14px">
+          <div class="time" id="tCur">00:00:00</div>
+          <div class="time" id="tRem">— 00:00:00</div>
+        </div>
+
+        <div class="row" style="justify-content:space-between;gap:12px;margin-bottom:10px">
+          <div class="row" style="flex-wrap:wrap; gap:8px">
+            <button id="prevCh" class="icon">⟨ Prev</button>
+            <button id="back30" class="icon">⟲ <span id="skipLabel1">30</span>s</button>
+            <button id="playPause" class="icon primary">▶︎ Play</button>
+            <button id="fwd30" class="icon"><span id="skipLabel2">30</span>s ⟳</button>
+            <button id="nextCh" class="icon">Next ⟩</button>
+            <div class="row" title="Skip step" style="margin-left:6px">
+              <span class="sub">Skip</span>
+              <select id="skipSel" class="icon-btn">
+                <option value="10">10s</option><option value="15">15s</option>
+                <option value="30" selected>30s</option><option value="60">60s</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="gap:14px">
+            <div class="row" style="gap:10px" title="Speed">
+              <span class="sub">Speed</span>
+              <input id="speed" class="range" type="range" min="0.5" max="3.0" step="0.1" value="1.0">
+              <span id="speedVal" class="sub">1.0×</span>
+            </div>
+            <div class="row" style="gap:10px" title="Volume">
+              <span class="sub">Vol</span>
+              <input id="vol" class="range" type="range" min="0" max="1" step="0.01" value="1">
+              <span id="volVal" class="sub">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="justify-content:space-between; gap:12px; margin-bottom:14px;">
+          <button id="addBookmark" class="icon">Add Bookmark</button>
+          <div class="row" title="Sleep Timer">
+            <span class="sub">Sleep</span>
+            <select id="sleep" class="icon-btn">
+              <option value="0">Off</option><option value="15">15 min</option>
+              <option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option>
+            </select>
+            <span id="sleepTimerDisplay" class="sub"></span>
+          </div>
+        </div>
+
+        <div>
+          <div class="tabs">
+            <div class="tab active" data-tab="chapters">Chapters</div>
+            <div class="tab" data-tab="bookmarks">Bookmarks</div>
+          </div>
+          <div id="chapters" class="tab-content active">
+            <input type="search" id="chSearch" class="search" placeholder="Filter chapters by title...">
+            <div class="row" style="gap:8px; margin-bottom:8px">
+              <button id="expCh" class="icon">Export Chapters</button>
+              <button id="impCh" class="icon">Import Chapters</button>
+              <input id="impChFile" type="file" accept=".json,application/json,text/plain" style="display:none">
+            </div>
+            <div id="chList" class="list"></div>
+          </div>
+          <div id="bookmarks" class="list tab-content"></div>
+        </div>
+
+        <audio id="audio" preload="metadata" style="display:none"></audio>
+        <div id="status" class="note" style="margin-top:8px">Ready. Add files to begin.</div>
+      </div>
+    </div>
+
+    <footer>
+      <div>Ultimate Audiobook Player — private, offline-first, chapter‑aware.</div>
+      <div class="row">
+        <span class="pill">Space: Play/Pause</span>
+        <span class="pill">←/→: ±Skip</span>
+        <span class="pill">[/]: Speed ±0.1×</span>
+        <span class="pill">Alt+←/→: Prev/Next Chapter</span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- Local lightweight libs -->
+<script src="./libs/music-metadata-browser.min.js"></script>
+<script src="./libs/jsmediatags.min.js"></script>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id)=>document.getElementById(id);
+  const ringLen = 2*Math.PI*18;
+  const fmt=(sec)=>{ if(!isFinite(sec)) return '00:00:00'; sec=Math.max(0,Math.floor(sec)); const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60; return [h,m,s].map(v=>String(v).padStart(2,'0')).join(':'); };
+  const audio = $('audio');
+
+  let library = [];
+  let currentId = null;
+  let sleepTimerId = null;
+  let chapterFilter = '';
+  const prefsKey = 'abp_prefs_fast_v2';
+  let prefs = loadPrefs();
+
+  // ---------- IndexedDB (covers cache) ----------
+  const DB_NAME = 'abp-cache'; const DB_VER = 1; const STORE = 'covers';
+  function openDB(){
+    return new Promise((resolve,reject)=>{
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = () => { const db=req.result; if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath:'id' }); };
+      req.onsuccess = ()=>resolve(req.result);
+      req.onerror = ()=>reject(req.error);
+    });
+  }
+  async function cacheCover(id, blob){
+    try{
+      const db = await openDB();
+      await new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put({ id, ts: Date.now(), type: blob.type||'image/jpeg', data: blob }); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); });
+    }catch(e){ console.warn('cover cache failed', e); }
+  }
+  async function getCoverURL(id){
+    try{
+      const db = await openDB();
+      const rec = await new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).get(id); req.onsuccess=()=>res(req.result||null); req.onerror=()=>rej(req.error); });
+      if(!rec) return null;
+      const blob = rec.data instanceof Blob ? rec.data : new Blob([rec.data], {type: rec.type||'image/jpeg'});
+      return URL.createObjectURL(blob);
+    }catch(e){ return null; }
+  }
+  async function downscaleImage(blob, max=600, type='image/jpeg', quality=0.85){
+    try{
+      const dataUrl = await new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=()=>rej(fr.error); fr.readAsDataURL(blob); });
+      const img = new Image(); img.decoding = 'async'; img.src = dataUrl;
+      await img.decode();
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const scale = Math.min(1, max / Math.max(w,h));
+      const dw = Math.max(1, Math.round(w*scale)), dh = Math.max(1, Math.round(h*scale));
+      const canvas = document.createElement('canvas'); canvas.width = dw; canvas.height = dh;
+      const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, dw, dh);
+      const out = await new Promise(res=>canvas.toBlob(res, type, quality));
+      return out || blob;
+    }catch{ return blob; }
+  }
+
+  // ---------- Persistence ----------
+  function loadPrefs(){ try{ return Object.assign({speed:1,vol:1,skip:30,lastId:null}, JSON.parse(localStorage.getItem(prefsKey)||'{}')); }catch{ return {speed:1,vol:1,skip:30,lastId:null}; } }
+  function savePrefs(){ try{ localStorage.setItem(prefsKey, JSON.stringify(prefs)); }catch{} }
+
+  function sanitizeForSave(item){
+    // We intentionally do not persist srcURL (blob) and we do not persist coverURL (we keep it in IDB)
+    const { srcURL, ...rest } = item;
+    if (rest.meta) {
+      rest.meta = { ...rest.meta, coverURL: '' };
+    }
+    return rest;
+  }
+  function saveLib(){
+    try { localStorage.setItem('abplib_v7', JSON.stringify(library.map(sanitizeForSave))); }
+    catch(e){ console.error("Failed to save library:", e); setStatus("Error: Could not save library (quota).", true); }
+  }
+  function loadLib(){
+    try{
+      const raw = localStorage.getItem('abplib_v7') || localStorage.getItem('abplib_v6') || '[]';
+      library = JSON.parse(raw);
+    }catch{ library=[]; }
+  }
+
+  // ---------- UI helpers ----------
+  function setStatus(msg, warn=false){ $('status').textContent=msg||''; $('status').style.color = warn? 'var(--warn)': 'var(--muted)'; }
+  function updateRing(){
+    const item = library.find(x=>x.id===currentId);
+    const cur=audio.currentTime||0;
+    const dur=isFinite(audio.duration)?audio.duration:(item?.duration||0);
+    const pct= dur? Math.min(100,(cur/dur)*100):0;
+    $('ringPct').textContent = Math.round(pct)+'%';
+    $('ringProg').setAttribute('stroke-dasharray', ringLen.toFixed(1));
+    $('ringProg').setAttribute('stroke-dashoffset', (ringLen*(1-pct/100)).toFixed(1));
+  }
+  function placeholderCover(title=''){
+    const initials = (title||'A').trim().slice(0,2).toUpperCase();
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
+      <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#00b3a4'/><stop offset='100%' stop-color='#1dd6c8'/></linearGradient></defs>
+      <rect width='100%' height='100%' fill='url(#g)'/><circle cx='160' cy='40' r='28' fill='rgba(255,255,255,0.12)'/><circle cx='40' cy='160' r='20' fill='rgba(255,255,255,0.12)'/>
+      <text x='50%' y='56%' text-anchor='middle' font-family='system-ui, -apple-system, Segoe UI, Roboto, Arial' font-size='72' font-weight='700' fill='rgba(255,255,255,0.92)'>${initials}</text>
+    </svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  function applyNowPlayingMeta(meta, name){
+    const title = meta?.title || (name || 'Unknown');
+    const artist = meta?.artist || 'Unknown';
+    $('npTitle').textContent = title;
+    $('npAuthor').textContent = artist;
+    $('npDesc').textContent = meta?.description || '—';
+    $('npCover').src = meta?.coverURL || placeholderCover(title);
+  }
+  function renderLib(filter = ''){
+    const root=$('lib'); root.innerHTML='';
+    const filteredLib = library.filter(item => {
+      const q = (filter||'').toLowerCase();
+      const title = (item.meta?.title || item.name).toLowerCase();
+      const artist = (item.meta?.artist || '').toLowerCase();
+      return title.includes(q) || artist.includes(q);
+    });
+    if(!filteredLib.length){
+      const n=document.createElement('div'); n.className='note';
+      n.textContent= library.length ? 'No matching items.' : 'No items. Add files to build your library.';
+      root.appendChild(n); return;
+    }
+    filteredLib.forEach(item=>{
+      const row=document.createElement('div'); row.className='item'; row.dataset.id = item.id;
+      const cov=document.createElement('img'); cov.className='cover'; cov.alt='cover';
+      cov.src=item.meta?.coverURL || placeholderCover(item.meta?.title || item.name);
+      const meta=document.createElement('div'); meta.className='meta grow';
+      const t=document.createElement('div'); t.className='title'; t.textContent=item.meta?.title||item.name;
+      const s=document.createElement('div'); s.className='sub'; s.textContent=`${item.meta?.artist||'Unknown'} • ${fmt(item.duration||0)}`;
+      meta.appendChild(t); meta.appendChild(s);
+      const ring=document.createElement('div'); ring.className='ring';
+      const pct = Math.min(100, ((item.lastPos||0)/(item.duration||1))*100);
+      ring.innerHTML=`<svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" stroke="rgba(255,255,255,.08)" stroke-width="6" fill="none"/><circle cx="22" cy="22" r="18" stroke="url(#grad)" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="${ringLen.toFixed(1)}" stroke-dashoffset="${(ringLen*(1-(pct/100))).toFixed(1)}"/></svg><div class="pct">${Math.round(pct)||0}%</div>`;
+      const playBtn = document.createElement('button'); playBtn.className = 'icon'; playBtn.innerHTML = '▶︎'; playBtn.title = 'Play'; playBtn.onclick = (e) => { e.stopPropagation(); loadAndPlay(item.id); };
+      const delBtn = document.createElement('button'); delBtn.className = 'icon'; delBtn.innerHTML = '🗑️'; delBtn.title = 'Remove'; delBtn.onclick = (e) => { e.stopPropagation(); if(confirm(`Remove "${item.meta?.title || item.name}"?`)){ try{ if(item.srcURL) URL.revokeObjectURL(item.srcURL); }catch{} try{ if(item.meta?.coverURL?.startsWith('blob:')) URL.revokeObjectURL(item.meta.coverURL);}catch{} library=library.filter(x=>x.id!==item.id); if(currentId === item.id) { audio.pause(); audio.src = ''; currentId = null; } saveLib(); renderLib(filter); } };
+      // Badge if needs reconnection
+      if (!item.srcURL) {
+        const need = document.createElement('span'); need.className='pill need-file'; need.textContent='Reconnect';
+        row.appendChild(need);
+      }
+      row.appendChild(cov); row.appendChild(meta); row.appendChild(ring); row.appendChild(playBtn); row.appendChild(delBtn);
+      row.onclick = () => loadAndPlay(item.id);
+      root.appendChild(row);
+    });
+  }
+  function renderChapters(list, durationSec){
+    const root = $('chList'); root.innerHTML='';
+    if(!list?.length){
+      const n=document.createElement('div'); n.className='note'; n.textContent='No chapters found in file.';
+      root.appendChild(n); $('prevCh').disabled = $('nextCh').disabled = true; updateChapterMarkers([]); return;
+    }
+    const filtered = list.filter(ch => !chapterFilter || (ch.title||'').toLowerCase().includes(chapterFilter));
+    const withDur = filtered.map((ch, i) => {
+      const start = ch.start || 0;
+      const end = (i+1 < list.length ? list[i+1].start : (durationSec || start)) || start;
+      return { ...ch, start, end, dur: Math.max(0, end - start) };
+    });
+    withDur.forEach((ch, i)=>{
+      const item=document.createElement('div'); item.className='item'; item.style.cursor='pointer';
+      const m=document.createElement('div'); m.className='meta grow';
+      const t=document.createElement('div'); t.className='title'; t.textContent=ch.title||`Chapter ${i+1}`;
+      const s=document.createElement('div'); s.className='sub time'; s.textContent=`${fmt(ch.start)} • ${fmt(ch.dur)}`;
+      m.appendChild(t); m.appendChild(s);
+      const b=document.createElement('button'); b.className='icon'; b.textContent='▶︎'; b.onclick=(ev)=>{ ev.stopPropagation(); audio.currentTime = ch.start; audio.play(); };
+      item.onmouseenter = ()=>{ item.style.boxShadow='inset 0 0 0 1px rgba(29,214,200,.25)'; };
+      item.onmouseleave = ()=>{ item.style.boxShadow='none'; };
+      item.onclick = ()=>{ audio.currentTime = ch.start; audio.play(); };
+      item.appendChild(m); item.appendChild(b); root.appendChild(item);
+    });
+    $('prevCh').disabled = $('nextCh').disabled = false;
+    updateChapterMarkers(list);
+  }
+  function updateChapterMarkers(chapters){
+    const el = $('chMarkers'); el.innerHTML='';
+    const dur = isFinite(audio.duration) ? audio.duration : null;
+    if (!chapters?.length || !dur) return;
+    chapters.forEach((ch,i)=>{
+      const start = ch.start||0;
+      const end = (i+1<chapters.length ? chapters[i+1].start : dur) || dur;
+      const left = Math.max(0,Math.min(100,(start/dur)*100));
+      const widthPct = Math.max(0,Math.min(100,((end-start)/dur)*100));
+      const m = document.createElement('div'); m.className='marker'+(widthPct<1?' small':''); m.style.left = left+'%'; if(widthPct>=1) m.style.width = '2px';
+      el.appendChild(m);
+    });
+  }
+  function renderBookmarks(bookId) {
+    const root = $('bookmarks'); root.innerHTML = '';
+    const book = library.find(b => b.id === bookId);
+    if (!book || !book.bookmarks || !book.bookmarks.length) {
+        const n = document.createElement('div'); n.className = 'note';
+        n.textContent = 'No bookmarks yet. Use "Add Bookmark" to save your spot.'; root.appendChild(n); return;
+    }
+    book.bookmarks.sort((a,b)=>a.time-b.time).forEach((bm,i)=>{
+      const item=document.createElement('div'); item.className='item bookmark-item'; item.style.cursor='pointer';
+      const m=document.createElement('div'); m.className='meta grow'; m.onclick=()=>{ audio.currentTime=bm.time; audio.play(); };
+      const t=document.createElement('div'); t.className='title'; t.textContent=`Bookmark at ${fmt(bm.time)}`;
+      m.appendChild(t);
+      const delBtn=document.createElement('button'); delBtn.className='icon'; delBtn.textContent='🗑️'; delBtn.onclick=(ev)=>{ ev.stopPropagation(); book.bookmarks.splice(i,1); saveLib(); renderBookmarks(bookId); };
+      item.appendChild(m); item.appendChild(delBtn); root.appendChild(item);
+    });
+  }
+
+  function chapterIndexAt(chapters, t){ if(!chapters?.length) return -1; let idx=-1; for(let i=0;i<chapters.length;i++){ if(t+0.001>=chapters[i].start) idx=i; else break; } return idx; }
+  function prevChapter(){ const item = library.find(x=>x.id===currentId); if(!item||!item.meta?.chapters?.length) return; const idx = chapterIndexAt(item.meta.chapters, audio.currentTime||0); const target = idx>0 ? item.meta.chapters[idx-1].start : 0; audio.currentTime = target; audio.play().catch(()=>{}); }
+  function nextChapter(){ const item = library.find(x=>x.id===currentId); if(!item||!item.meta?.chapters?.length) return; const idx = chapterIndexAt(item.meta.chapters, audio.currentTime||0); const target = (idx+1 < item.meta.chapters.length) ? item.meta.chapters[idx+1].start : audio.duration || (item.duration||0); if (isFinite(target)) { audio.currentTime = target; audio.play().catch(()=>{}); } }
+
+  // ---------- Add / Reconnect / Play ----------
+  async function addFiles(list){
+    for(const file of list){
+      const id = `${file.name}|${file.size}|${file.lastModified}`;
+      // If item exists, ask to update source or create duplicate
+      let item = library.find(x=>x.id===id);
+      if (item) {
+        // Just update srcURL and maybe duration/cover if missing
+        item.srcURL = URL.createObjectURL(file);
+        if (!item.type) item.type = file.type;
+        if (!item.meta || !item.meta.title) {
+          const meta = await extractMetadata(file);
+          item.meta = { ...item.meta, ...meta };
+        }
+      } else {
+        const meta = await extractMetadata(file);
+        const objURL = URL.createObjectURL(file);
+        item = { id, name:file.name, size:file.size, type:file.type, meta, srcURL:objURL, lastPos:0, duration: meta.duration||0, bookmarks: [] };
+        library.push(item);
+      }
+      // Persist cover in IDB and replace meta.coverURL with cached blob URL
+      try {
+        const title = item.meta?.title || item.name;
+        if (item.meta?.coverURL) {
+          const originalBlob = await fetch(item.meta.coverURL).then(r=>r.blob()).catch(()=>null);
+          if (originalBlob) {
+            const small = await downscaleImage(originalBlob, 600, 'image/jpeg', 0.85);
+            await cacheCover(item.id, small);
+          }
+        }
+        const cached = await getCoverURL(item.id);
+        item.meta.coverURL = cached || item.meta.coverURL || placeholderCover(title);
+      } catch {}
+    }
+    saveLib(); renderLib($('search').value);
+  }
+
+  async function promptReconnect(item){
+    return new Promise((resolve)=>{
+      const input = document.createElement('input'); input.type='file'; input.accept='audio/*,.m4b';
+      input.onchange = async () => {
+        const file = input.files && input.files[0]; if (!file) return resolve(null);
+        resolve(file);
+      };
+      input.click();
+    });
+  }
+
+  async function loadAndPlay(id){
+    const item = library.find(x=>x.id===id); if(!item) return;
+    currentId = id; prefs.lastId = id; savePrefs();
+    setStatus('Loading…');
+
+    // If we don't have a live source (e.g., after refresh), prompt user to reconnect
+    if (!item.srcURL) {
+      setStatus('This title needs the audio file to be reselected.');
+      const file = await promptReconnect(item);
+      if (!file) { setStatus('File not selected.', true); return; }
+      const newId = `${file.name}|${file.size}|${file.lastModified}`;
+      if (newId !== item.id) {
+        const ok = confirm('The selected file differs from the saved entry. Use it and keep progress/bookmarks?');
+        if (!ok) return;
+        item.id = newId; item.name = file.name; item.size = file.size; item.type = file.type;
+      }
+      item.srcURL = URL.createObjectURL(file);
+      // If duration unknown, try to update quickly via metadata parser
+      if (!item.duration || item.duration === 0) {
+        try {
+          const meta = await extractMetadata(file);
+          item.duration = meta.duration || item.duration || 0;
+          // If we got a better cover, cache it
+          if (meta.coverURL) {
+            const blob = await fetch(meta.coverURL).then(r=>r.blob()).catch(()=>null);
+            if (blob) {
+              const small = await downscaleImage(blob, 600, 'image/jpeg', 0.85);
+              await cacheCover(item.id, small);
+              const cached = await getCoverURL(item.id);
+              if (cached) item.meta.coverURL = cached;
+            }
+          } else {
+            const cached = await getCoverURL(item.id);
+            if (cached) item.meta.coverURL = cached;
+          }
+          item.meta.title = meta.title || item.meta.title || item.name;
+          item.meta.artist = meta.artist || item.meta.artist || 'Unknown';
+          if (!item.meta.description && meta.description) item.meta.description = meta.description;
+        } catch {}
+      } else {
+        // Ensure cover restored from cache if available
+        const cached = await getCoverURL(item.id);
+        if (cached) item.meta.coverURL = cached;
+      }
+      saveLib(); renderLib($('search').value);
+    }
+
+    if (!canPlayFile({name:item.name, type:item.type})) {
+      setStatus('This format may not be supported by your browser. Try another browser.', true);
+      return;
+    }
+
+    audio.src = item.srcURL;
+    audio.playbackRate = Number(prefs.speed||1); audio.volume = Number(prefs.vol||1);
+    $('speed').value = audio.playbackRate; $('speedVal').textContent = audio.playbackRate.toFixed(1)+'×';
+    $('vol').value = audio.volume; $('volVal').textContent = Math.round(audio.volume*100)+'%';
+    $('skipSel').value = String(prefs.skip||30); $('skipLabel1').textContent = $('skipLabel2').textContent = $('skipSel').value;
+
+    applyNowPlayingMeta(item.meta||{}, item.name);
+    renderChapters(item.meta?.chapters||[], item.duration||0);
+    renderBookmarks(item.id);
+
+    audio.onloadedmetadata = ()=>{
+      const dur = isFinite(audio.duration)? audio.duration : (item.duration||0);
+      if(item.lastPos && item.lastPos < dur - 5){ audio.currentTime = item.lastPos; }
+      $('tRem').textContent = '— ' + fmt((dur||0) - (audio.currentTime||0));
+      item.duration = dur || item.duration || 0; saveLib(); renderLib($('search').value); updateRing();
+      updateChapterMarkers(item.meta?.chapters||[]);
+      setStatus('Playing file.');
+    };
+    audio.onended = ()=>{ item.lastPos=0; saveLib(); renderLib($('search').value); updateRing(); };
+    audio.onplay = ()=>{ $('playPause').textContent='⏸ Pause'; };
+    audio.onpause = ()=>{ $('playPause').textContent='▶︎ Play'; };
+    audio.ontimeupdate = ()=>{
+      $('tCur').textContent = fmt(audio.currentTime||0);
+      const dur = isFinite(audio.duration)? audio.duration : (item.duration||0);
+      $('tRem').textContent = '— ' + fmt(Math.max(0, dur - (audio.currentTime||0)));
+      const pct = dur? Math.min(100, (audio.currentTime||0)/dur*100):0;
+      $('played').style.width = pct+'%';
+      $('seek').value = pct;
+      item.lastPos = audio.currentTime||0;
+      if (!item.saveTimeout) { item.saveTimeout = setTimeout(()=>{ saveLib(); item.saveTimeout=null; }, 700); }
+      updateRing();
+    };
+    audio.onprogress = ()=>{
+      if(!isFinite(audio.duration) || !audio.buffered?.length){ $('buffered').style.width='0%'; return; }
+      const end = audio.buffered.end(audio.buffered.length-1); $('buffered').style.width = Math.min(100, (end/audio.duration)*100) + '%';
+    };
+    audio.onerror = (e)=>{ console.error('Audio Error', e?.target?.error); setStatus('Playback error. File may be unsupported or corrupt.', true); };
+
+    try { await audio.play(); } catch (e) { console.error("Play failed:", e); setStatus("Could not start playback.", true); }
+  }
+
+  // ---------- Controls ----------
+  $('playPause').onclick = ()=>{ if(audio.src){ if(audio.paused) audio.play(); else audio.pause(); } else if (library.length > 0) { loadAndPlay(library[0].id); }};
+  $('prevCh').onclick = prevChapter;
+  $('nextCh').onclick = nextChapter;
+  $('back30').onclick = ()=>{ const s=Number($('skipSel').value||prefs.skip||30); audio.currentTime = Math.max(0,(audio.currentTime||0)-s); };
+  $('fwd30').onclick = ()=>{ const s=Number($('skipSel').value||prefs.skip||30); audio.currentTime = Math.min((audio.duration||Infinity),(audio.currentTime||0)+s); };
+  $('skipSel').addEventListener('change', e=>{ prefs.skip=Number(e.target.value)||30; $('skipLabel1').textContent = $('skipLabel2').textContent = $('skipSel').value; savePrefs(); });
+  $('speed').addEventListener('input', e=>{ const v=Number(e.target.value); audio.playbackRate=v; $('speedVal').textContent=v.toFixed(1)+'×'; prefs.speed=v; savePrefs(); });
+  $('vol').addEventListener('input', e=>{ const v=Number(e.target.value); audio.volume=v; $('volVal').textContent=Math.round(v*100)+'%'; prefs.vol=v; savePrefs(); });
+  $('seek').addEventListener('input', e=>{ const dur=isFinite(audio.duration)?audio.duration:0; if(!dur) return; const pct=Number(e.target.value); audio.currentTime = (pct/100)*dur; });
+
+  document.addEventListener('keydown', (e)=>{
+    if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+    if(e.code==='Space'){ e.preventDefault(); $('playPause').click(); }
+    else if(e.key==='ArrowLeft'){ e.preventDefault(); const s=Number($('skipSel').value||prefs.skip||30); audio.currentTime = Math.max(0,(audio.currentTime||0)-s); }
+    else if(e.key==='ArrowRight'){ e.preventDefault(); const s=Number($('skipSel').value||prefs.skip||30); audio.currentTime = Math.min((audio.duration||Infinity),(audio.currentTime||0)+s); }
+    else if(e.altKey && e.key==='ArrowLeft'){ e.preventDefault(); prevChapter(); }
+    else if(e.altKey && e.key==='ArrowRight'){ e.preventDefault(); nextChapter(); }
+    else if(e.key==='['){ e.preventDefault(); const s=Math.max(0.5,Number($('speed').value)-0.1); $('speed').value=s; $('speed').dispatchEvent(new Event('input')); }
+    else if(e.key===']'){ e.preventDefault(); const s=Math.min(3.0,Number($('speed').value)+0.1); $('speed').value=s; $('speed').dispatchEvent(new Event('input')); }
+  });
+
+  const drop=$('drop');
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev, e=>{e.preventDefault(); drop.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev, e=>{ drop.classList.remove('drag'); }));
+  drop.addEventListener('drop', async (e)=>{ e.preventDefault(); const files=[...e.dataTransfer.files].filter(f=> f.type.startsWith('audio/') || /\.(m4b|m4a|mp3|aac|ogg|opus|mp4|wav|flac)$/i.test(f.name)); if(files.length) await addFiles(files); });
+  $('addBtn').onclick=()=>$('pick').click();
+  $('pick').addEventListener('change', async (e)=>{ const files=[...e.target.files]; if(files.length) await addFiles(files); e.target.value=''; });
+
+  $('search').addEventListener('input', e => renderLib(e.target.value));
+  $('chSearch').addEventListener('input', e => { chapterFilter = (e.target.value||'').toLowerCase(); const item = library.find(x=>x.id===currentId); renderChapters(item?.meta?.chapters || [], item?.duration||0); });
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelector('.tab.active').classList.remove('active');
+      document.querySelector('.tab-content.active').classList.remove('active');
+      tab.classList.add('active');
+      $(tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Bookmarks
+  $('addBookmark').addEventListener('click', () => {
+    const book = library.find(b => b.id === currentId);
+    if (!book || !isFinite(audio.currentTime)) return;
+    if (!book.bookmarks) book.bookmarks = [];
+    if (book.bookmarks.some(bm => Math.floor(bm.time) === Math.floor(audio.currentTime))) return;
+    book.bookmarks.push({ time: audio.currentTime });
+    saveLib(); renderBookmarks(currentId);
+  });
+
+  // Sleep
+  function updateSleepTimerDisplay(timeLeft) {
+    const display = $('sleepTimerDisplay');
+    if (timeLeft > 0) display.textContent = `~${Math.ceil(timeLeft / 60)} min left`;
+    else display.textContent = '';
+  }
+  $('sleep').addEventListener('change', e => {
+    clearInterval(sleepTimerId);
+    const minutes = Number(e.target.value);
+    if (minutes > 0) {
+      const endTime = Date.now() + minutes * 60000;
+      updateSleepTimerDisplay((endTime - Date.now()) / 1000);
+      sleepTimerId = setInterval(() => {
+        const timeLeft = endTime - Date.now();
+        if (timeLeft <= 0) {
+          audio.pause();
+          clearInterval(sleepTimerId);
+          $('sleep').value = "0";
+          updateSleepTimerDisplay(0);
+        } else {
+          updateSleepTimerDisplay(timeLeft / 1000);
+        }
+      }, 1000);
+    } else {
+      updateSleepTimerDisplay(0);
+    }
+  });
+
+  // Export/Import chapters
+  $('expCh').addEventListener('click', ()=>{
+    const item = library.find(x=>x.id===currentId); if(!item) return;
+    const data = { id:item.id, name:item.name, title:item.meta?.title||item.name, chapters:item.meta?.chapters||[] };
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(item.meta?.title||item.name).replace(/[\\/:*?"<>|]/g,'_') + '.chapters.json'; a.click();
+  });
+  $('impCh').addEventListener('click', ()=>$('impChFile').click());
+  $('impChFile').addEventListener('change', async (e)=>{
+    const file = e.target.files && e.target.files[0]; e.target.value='';
+    if(!file) return;
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const arr = Array.isArray(json.chapters) ? json.chapters : (Array.isArray(json)? json : []);
+      if (!arr.length) throw new Error('Invalid chapters file');
+      const chapters = arr.map(c=>({ title:String(c.title||''), start:Number(c.start||c.time||0) })).sort((a,b)=>a.start-b.start);
+      const item = library.find(x=>x.id===currentId); if(!item) return;
+      item.meta.chapters = chapters;
+      saveLib(); renderChapters(item.meta.chapters, item.duration||0); updateChapterMarkers(item.meta.chapters);
+      setStatus('Imported chapters.');
+    } catch(err){ console.error(err); setStatus('Failed to import chapters.', true); }
+  });
+
+  // Init
+  loadLib();
+  renderLib();
+  // Restore cover URLs from cache (async) after reload
+  (async ()=>{
+    for (const item of library) {
+      const cached = await getCoverURL(item.id);
+      if (cached) { item.meta = item.meta || {}; item.meta.coverURL = cached; }
+    }
+    renderLib($('search').value);
+  })();
+
+  if (prefs.lastId && library.some(x=>x.id===prefs.lastId)) {
+    // Optionally preload last item paused (keeps UI in sync)
+    loadAndPlay(prefs.lastId).then(()=>audio.pause()).catch(()=>{});
+  }
+
+  // ---------- Capability ----------
+  function canPlayFile(file){
+    const ext = (file.name.split('.').pop()||'').toLowerCase();
+    const fallbackType = ext==='m4b'||ext==='mp4' ? 'audio/mp4'
+                       : ext==='m4a' ? 'audio/aac'
+                       : ext==='mp3' ? 'audio/mpeg'
+                       : ext==='ogg'||ext==='oga' ? 'audio/ogg'
+                       : ext==='opus' ? 'audio/ogg; codecs=opus'
+                       : ext==='flac'? 'audio/flac'
+                       : ext==='wav' ? 'audio/wav'
+                       : 'application/octet-stream';
+    const type = file.type || fallbackType;
+    const res = audio.canPlayType(type);
+    if (!res && (ext==='m4b'||ext==='m4a'||ext==='mp4')) {
+      const aac = audio.canPlayType('audio/mp4; codecs="mp4a.40.2"') || audio.canPlayType('audio/aac');
+      return aac === 'probably' || aac === 'maybe';
+    }
+    return res === 'probably' || res === 'maybe';
+  }
+
+  // ---------- Metadata: fast M4B + fallbacks ----------
+  async function extractMetadata(file) {
+    const ext = (file.name.split('.').pop()||'').toLowerCase();
+    const isMp4 = ['m4b','m4a','mp4','m4v','mpg4'].includes(ext);
+    const isMp3 = ext === 'mp3';
+    const baseTitle = file.name.replace(/\.[^.]+$/, '');
+    let meta = { title: baseTitle, artist: 'Unknown', duration: 0, chapters: [], coverURL: '', description: '' };
+
+    if (isMp4) {
+      try {
+        const r = await parseMP4Fast(file);
+        if (r.tags) {
+          meta.title = r.tags.title || meta.title;
+          meta.artist = r.tags.artist || r.tags.albumArtist || meta.artist;
+          meta.description = r.tags.comment || meta.description;
+        }
+        if (r.cover?.url) meta.coverURL = r.cover.url;
+        if (r.chapters?.length) meta.chapters = r.chapters.map(c=>({ title:c.title, start:(c.timeMs||0)/1000 }));
+      } catch(e){ /* keep fast */ }
+    }
+
+    try {
+      const mm = await window.musicMetadata.parseBlob(file);
+      const common = mm.common || {};
+      meta.title = meta.title || common.title || baseTitle;
+      meta.artist = meta.artist || common.artist || common.albumartist || 'Unknown';
+      meta.description = meta.description || (Array.isArray(common.comment)?common.comment[0]:common.comment) || '';
+      meta.duration = mm.format?.duration || meta.duration;
+      if (!meta.chapters?.length && common.chapters?.length) {
+        meta.chapters = common.chapters.map(c=>({ title: c.title || '', start: c.startTime || 0 }));
+      }
+      if (!meta.coverURL && common.picture?.length) {
+        const pic=common.picture[0]; const blob=new Blob([pic.data], {type: pic.format}); meta.coverURL = URL.createObjectURL(blob);
+      }
+    } catch(e){ /* ignore for speed */ }
+
+    if (isMp3 && (!meta.chapters || meta.chapters.length===0)) {
+      try { const chap = await parseMP3Chapters(file); if (chap?.length) meta.chapters = chap; } catch(e){ /* ignore */ }
+    }
+
+    meta.title = meta.title || baseTitle;
+    meta.artist = meta.artist || 'Unknown';
+    meta.coverURL = meta.coverURL || '';
+    meta.duration = meta.duration || 0;
+    meta.chapters = Array.isArray(meta.chapters) ? meta.chapters : [];
+
+    return meta;
+  }
+
+  // ---------- Fast MP4/M4B parser (Nero + QuickTime chapters) ----------
+  async function parseMP4Fast(file){
+    const td8 = new TextDecoder('utf-8'), td16 = new TextDecoder('utf-16be');
+    const decodeText = (u8)=>{ try{ let z=0; for(let i=0;i<u8.length;i++) if(u8[i]===0) z++; if(z>u8.length/3) return td16.decode(u8).replace(/\u0000+$/,''); return td8.decode(u8).replace(/\u0000+$/,''); }catch{ try{ return td16.decode(u8); }catch{ return ''; } } };
+
+    async function findRootBox(target){
+      let pos=0;
+      while(pos+8<=file.size){
+        const ab = await file.slice(pos, pos+16).arrayBuffer();
+        const dv = new DataView(ab);
+        let size = dv.getUint32(0,false);
+        const type = String.fromCharCode(dv.getUint8(4),dv.getUint8(5),dv.getUint8(6),dv.getUint8(7));
+        let head = 8;
+        if (size===1){ size = dv.getUint32(8,false)*4294967296 + dv.getUint32(12,false); head=16; }
+        else if (size===0){ size = file.size - pos; }
+        if (type === target) return { start: pos, size };
+        if (size < head) break;
+        pos += size;
+      }
+      return { start:null, size:0 };
+    }
+
+    const moovRef = await findRootBox('moov');
+    if (moovRef.start == null) throw new Error("No 'moov' box found.");
+    const moovBuf = await file.slice(moovRef.start, moovRef.start + moovRef.size).arrayBuffer();
+    const dv = new DataView(moovBuf);
+    const len = dv.byteLength;
+
+    const u32=(o)=>dv.getUint32(o,false);
+    const typ=(o)=>String.fromCharCode(dv.getUint8(o),dv.getUint8(o+1),dv.getUint8(o+2),dv.getUint8(o+3));
+    const u64=(o)=>dv.getUint32(o,false)*4294967296 + dv.getUint32(o+4,false);
+    function hdr(off,end){ if (off+8>end) return null; let size=u32(off), type=typ(off+4), head=8; if (size===1){ if (off+16>end) return null; size=u64(off+8); head=16; } else if (size===0){ size=end-off; } const boxEnd = off+size; if (boxEnd> end || size < head) return null; return {type, start:off, size, head, data:off+head, end:boxEnd}; }
+    function children(start,end){ const out=[]; let p=start; while(p+8<=end){ const h=hdr(p,end); if(!h) break; out.push(h); p=h.end; } return out; }
+
+    const moov = hdr(0, len);
+    const kids = children(moov.data, moov.end);
+
+    let tags={}, cover=null, chapters=[];
+    const udta = kids.find(b=>b.type==='udta');
+    if (udta){
+      const uKids = children(udta.data, udta.end);
+      const meta = uKids.find(b=>b.type==='meta');
+      if (meta){
+        const mKids = children(meta.data+4, meta.end); // skip FullBox
+        const ilst = mKids.find(b=>b.type==='ilst');
+        if (ilst){
+          const itms = children(ilst.data, ilst.end);
+          for (const it of itms){
+            const dboxes = children(it.data, it.end).filter(b=>b.type==='data');
+            for (const d of dboxes){
+              const t = u32(d.data);
+              const vs=d.data+8, ve=d.end; const u8=new Uint8Array(dv.buffer, vs, ve-vs);
+              let text=null; if (t===1) text=decodeText(u8);
+              if (it.type==='covr'){
+                const mime = t===14?'image/png': t===13?'image/jpeg':'application/octet-stream';
+                const blob = new Blob([u8], {type:mime}); cover={mime, url: URL.createObjectURL(blob)};
+              } else if (it.type==='trkn' || it.type==='disk'){
+                const dv2 = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+                const pair = { no: u8.length>=4?dv2.getUint16(2,false):undefined, of: u8.length>=6?dv2.getUint16(4,false):undefined };
+                if (it.type==='trkn') tags.track=pair; else tags.disk=pair;
+              } else if (text!=null){
+                if (it.type==='©nam') tags.title=text;
+                else if (it.type==='©ART') tags.artist=text;
+                else if (it.type==='aART') tags.albumArtist=text;
+                else if (it.type==='©alb') tags.album=text;
+                else if (it.type==='©gen') tags.genre=text;
+                else if (it.type==='©day') tags.year=text;
+                else if (it.type==='©wrt') tags.composer=text;
+                else if (it.type==='©cmt') tags.comment=text;
+                else if (it.type==='©too') tags.encoder=text;
+              }
+            }
+          }
+        }
+      }
+      const chpl = children(udta.data, udta.end).find(b=>b.type==='chpl');
+      if (chpl){
+        let p = chpl.data; if (chpl.end - p >= 6){
+          p += 4; const count = dv.getUint8(p); p += 1;
+          for (let i=0;i<count;i++){
+            if (p+9>chpl.end) break;
+            const ms = u64(p); p+=8;
+            const n = dv.getUint8(p); p+=1; if (p+n>chpl.end) break;
+            const u8 = new Uint8Array(dv.buffer,p,n); p+=n;
+            chapters.push({ timeMs: ms, title: decodeText(u8) });
+          }
+        }
+      }
+    }
+    if (chapters.length) return { tags, cover, chapters };
+
+    // QuickTime chapter track
+    const traks = kids.filter(b=>b.type==='trak').map(trak => parseTrak(dv, trak, children, hdr, u32, typ, u64));
+    const byId = new Map(traks.map(t=>[t.id,t]));
+    const audioTracks = traks.filter(t=>t.hdlr==='soun');
+    let chapTrack = null;
+    for (const a of audioTracks){
+      const ids = (a.refs && a.refs.chap) || [];
+      const target = ids.find(id => byId.get(id) && isTextTrack(byId.get(id)));
+      if (target) { chapTrack = byId.get(target); break; }
+    }
+    if (!chapTrack){
+      const cand = traks.filter(isTextTrack).filter(t => (t.sampleCount||0) > 0);
+      chapTrack = cand.sort((x,y)=>(y.sampleCount||0)-(x.sampleCount||0))[0];
+    }
+    if (!chapTrack) return { tags, cover, chapters:[] };
+
+    const samples = buildSamples(chapTrack);
+    for (const s of samples){
+      if (!isFinite(s.offset) || !isFinite(s.size) || s.size<=0) continue;
+      const ab = await file.slice(s.offset, s.offset + s.size).arrayBuffer();
+      let u8 = new Uint8Array(ab);
+      if (u8.length>=2){ const n=(u8[0]<<8)|u8[1]; if (n>0 && 2+n<=u8.length) u8 = u8.subarray(2,2+n); }
+      const title = decodeText(u8).trim();
+      if (title) chapters.push({ timeMs: Math.floor(s.dts*1000/chapTrack.ts), title });
+    }
+    return { tags, cover, chapters };
+
+    function parseTrak(dv, trak, children, hdr, u32, typ, u64){
+      const tKids = children(trak.data, trak.end);
+      const tkhd = tKids.find(b=>b.type==='tkhd');
+      const mdia = tKids.find(b=>b.type==='mdia');
+      const tref = tKids.find(b=>b.type==='tref');
+      if (!tkhd || !mdia) return {};
+      let p = tkhd.data, ver = dv.getUint8(p); p += 4; p += (ver===1?16:8);
+      const id = dv.getUint32(p,false);
+      const mKids = children(mdia.data, mdia.end);
+      const hdlr = mKids.find(b=>b.type==='hdlr');
+      const mdhd = mKids.find(b=>b.type==='mdhd');
+      const hType = hdlr ? typ(hdlr.data+8) : '';
+      let ts = 1000; if (mdhd){ let q=mdhd.data, v=dv.getUint8(q); q+=4; q+=(v===1?16:8); ts=dv.getUint32(q,false); }
+      const minf = mKids.find(b=>b.type==='minf');
+      let stsdTypes=[], stts=null, stsz=null, stsc=null, stco=null, co64=null;
+      if (minf){
+        const stbl = children(minf.data, minf.end).find(b=>b.type==='stbl');
+        if (stbl){
+          const sKids = children(stbl.data, stbl.end);
+          const stsd = sKids.find(b=>b.type==='stsd');
+          if (stsd){
+            const cnt = dv.getUint32(stsd.data+4,false);
+            let pos = stsd.data+8;
+            for (let i=0;i<cnt;i++){ const h=hdr(pos, stsd.end); if(!h) break; stsdTypes.push(h.type.toLowerCase()); pos=h.end; }
+          }
+          stts = sKids.find(b=>b.type==='stts');
+          stsz = sKids.find(b=>b.type==='stsz');
+          stsc = sKids.find(b=>b.type==='stsc');
+          stco = sKids.find(b=>b.type==='stco');
+          co64 = sKids.find(b=>b.type==='co64');
+        }
+      }
+      const refs = {};
+      if (tref){
+        const rKids = children(tref.data, tref.end);
+        for (const r of rKids){ const ids=[]; for (let o=r.data; o+4<=r.end; o+=4) ids.push(dv.getUint32(o,false)); refs[r.type]=ids; }
+      }
+      let sttsEntries=[], totalSamples=0;
+      if (stts){ const n=u32(stts.data+4); let o=stts.data+8; for (let i=0;i<n;i++){ if (o+8>stts.end) break; const c=u32(o), d=u32(o+4); o+=8; sttsEntries.push({c,d}); totalSamples+=c; } }
+      let defSize=0, sizes=[], sampleCount=0;
+      if (stsz){ defSize=u32(stsz.data+4); sampleCount=u32(stsz.data+8); if (defSize===0){ let o=stsz.data+12; for (let i=0;i<sampleCount;i++){ if (o+4>stsz.end) break; sizes.push(u32(o)); o+=4; } } }
+      let stscEntries=[];
+      if (stsc){ const n=u32(stsc.data+4); let o=stsc.data+8; for (let i=0;i<n;i++){ if (o+12>stsc.end) break; stscEntries.push({fc:u32(o), spc:u32(o+4)}); o+=12; } }
+      let chunkOffsets=[];
+      if (co64){ const n=u32(co64.data+4); let o=co64.data+8; for (let i=0;i<n;i++){ if (o+8>co64.end) break; chunkOffsets.push(u64(o)); o+=8; } }
+      else if (stco){ const n=u32(stco.data+4); let o=stco.data+8; for (let i=0;i<n;i++){ if (o+4>stco.end) break; chunkOffsets.push(u32(o)); o+=4; } }
+      return { id, hdlr:hType, ts, stsdTypes, stts:sttsEntries, totalSamples, defSize, sizes, sampleCount, stsc:stscEntries, chunkOffsets, refs };
+    }
+    function isTextTrack(t){ const h=t.hdlr, sd=(t.stsdTypes||[]).join(","); return h==='text'||h==='sbtl'||h==='subt'||sd.includes('tx3g')||sd.includes('text'); }
+    function buildSamples(t){
+      const N=Math.min(t.sampleCount||0,t.totalSamples||Infinity); if(!N||!t.stts||!t.chunkOffsets.length) return [];
+      const dts=new Array(N); let time=0,i=0; for(const e of t.stts){ for(let j=0;j<e.c && i<N; j++){ dts[i]=time; time+=e.d; i++; } if(i>=N) break; }
+      const sizes = t.defSize>0 ? Array(N).fill(t.defSize) : t.sizes.slice(0,N);
+      const nChunks=t.chunkOffsets.length, spc=new Array(nChunks).fill(0);
+      for(let i=0;i<t.stsc.length;i++){ const cur=t.stsc[i], next=(i+1<t.stsc.length)?t.stsc[i+1].fc:nChunks+1; for(let c=cur.fc;c<next;c++) if(c>=1&&c<=nChunks) spc[c-1]=cur.spc; }
+      const chunkFirst = new Array(nChunks).fill(0); let sIdx=0; for(let c=0;c<nChunks;c++){ chunkFirst[c]=sIdx; sIdx+=spc[c]||0; }
+      const out=new Array(N);
+      for(let c=0;c<nChunks;c++){ let off=t.chunkOffsets[c]||0, count=spc[c]||0; for(let j=0;j<count;j++){ const k=chunkFirst[c]+j; if(k>=N) break; const sz=sizes[k]||0; out[k]={offset:off,size:sz,dts:dts[k]}; off+=sz; } }
+      return out.filter(Boolean);
+    }
+  }
+
+  // ---------- Minimal MP3 CHAP/CTOC fallback ----------
+  async function parseMP3Chapters(file){
+    const head = await file.slice(0, 10).arrayBuffer();
+    const dvh = new DataView(head);
+    if (String.fromCharCode(dvh.getUint8(0),dvh.getUint8(1),dvh.getUint8(2)) !== 'ID3') return [];
+    const ver = dvh.getUint8(3);
+    const size = ((dvh.getUint8(6)&0x7f)<<21)|((dvh.getUint8(7)&0x7f)<<14)|((dvh.getUint8(8)&0x7f)<<7)|(dvh.getUint8(9)&0x7f);
+    const buf = await file.slice(0, 10+size).arrayBuffer();
+    const dv = new DataView(buf);
+    const td8 = new TextDecoder('utf-8'); const td16 = new TextDecoder('utf-16'); const td16be = new TextDecoder('utf-16be'); const tdLatin1 = new TextDecoder('iso-8859-1');
+
+    function frameAt(pos){
+      if (pos+10 > dv.byteLength) return null;
+      const id = String.fromCharCode(dv.getUint8(pos),dv.getUint8(pos+1),dv.getUint8(pos+2),dv.getUint8(pos+3));
+      if (!/^[A-Z0-9]{4}$/.test(id)) return null;
+      let size = ver===4
+        ? ((dv.getUint8(pos+4)&0x7f)<<21)|((dv.getUint8(pos+5)&0x7f)<<14)|((dv.getUint8(pos+6)&0x7f)<<7)|(dv.getUint8(pos+7)&0x7f)
+        : dv.getUint32(pos+4,false);
+      const start = pos+10, end = start+size; if (end>dv.byteLength) return null;
+      return { id, start, end, next:end };
+    }
+    const decodeText=(bytes)=>{
+      if (!bytes || !bytes.length) return '';
+      const enc = bytes[0]; const data = bytes.subarray(1);
+      try {
+        switch(enc){
+          case 0x00: return tdLatin1.decode(data);
+          case 0x01: return td16.decode(data);
+          case 0x02: return td16be.decode(data);
+          case 0x03: return td8.decode(data);
+          default: return td8.decode(data);
+        }
+      } catch { return td8.decode(data); }
+    };
+
+    let pos=10; const end=10+size; const chapters=[];
+    while(pos<end){
+      const fr = frameAt(pos); if(!fr) break; pos = fr.next;
+      if (fr.id==='CHAP'){
+        let p = fr.start;
+        let i=p; while(i<fr.end && dv.getUint8(i)!==0) i++; p = i+1;
+        if (p+16>fr.end) continue;
+        const startTime = dv.getUint32(p,false); p+=4; p+=12;
+        let title = '';
+        while (p+10<=fr.end){
+          const sid = String.fromCharCode(dv.getUint8(p),dv.getUint8(p+1),dv.getUint8(p+2),dv.getUint8(p+3));
+          let ssize = ver===4
+            ? ((dv.getUint8(p+4)&0x7f)<<21)|((dv.getUint8(p+5)&0x7f)<<14)|((dv.getUint8(p+6)&0x7f)<<7)|(dv.getUint8(p+7)&0x7f)
+            : dv.getUint32(p+4,false);
+          const sstart = p+10, send = sstart+ssize; if (send>fr.end) break;
+          if (sid==='TIT2' || sid==='TIT3'){ title = decodeText(new Uint8Array(dv.buffer, dv.byteOffset+sstart, ssize)).trim(); }
+          p = send;
+        }
+        chapters.push({ title, start: (startTime||0)/1000 });
+      }
+    }
+    return chapters.sort((a,b)=>a.start-b.start);
+  }
+
+})();
+</script>
+</body>
+</html>
