@@ -83,15 +83,16 @@
 
   /* Lists */
   .list{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto;padding:6px 8px}
+
   .item{
     width:100%; box-sizing:border-box; display:flex; align-items:center; gap:12px; padding:12px;
     border:1px solid rgba(255,255,255,.06); border-radius:12px; background:rgba(255,255,255,.03);
     transition: .15s ease; overflow:hidden; cursor:pointer; position:relative;
   }
   .item:hover{border-color:rgba(0,179,164,.35); background:rgba(0,179,164,.06);}
+
   .meta{display:flex;flex-direction:column;gap:4px;min-width:0; flex:1 1 auto; cursor:pointer}
-  .title{font-size:15px;font-weight:800; line-height:1.25; white-space:normal; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; cursor:pointer}
-  .title[title]{cursor:pointer}
+  .title{font-size:15px;font-weight:800; line-height:1.3; white-space:normal; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; cursor:pointer}
   .sub{font-size:12px;color:var(--muted); cursor:pointer}
   .cover{width:56px;height:56px;border-radius:12px;background:#0a1413;border:1px solid rgba(255,255,255,.08);object-fit:cover;flex:none}
   .ring{position:relative;width:44px;height:44px;flex:none}
@@ -114,21 +115,14 @@
   /* Sections */
   .section-title{font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);margin:0 0 6px 2px}
   .note{font-size:12px;color:var(--muted)}
-  footer{
-    padding:72px 16px 16px; /* space for mini player */
-    display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid rgba(255,255,255,.06);color:var(--muted);font-size:12px
-  }
+  footer{padding:72px 16px 16px; display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid rgba(255,255,255,.06);color:var(--muted);font-size:12px}
 
   /* Now playing */
   .now{display:grid;grid-template-columns:160px 1fr;gap:16px}
   .np-cover{width:160px;height:160px;border-radius:14px;background:#0a1413;border:1px solid rgba(255,255,255,.08);object-fit:cover}
   #npTitle{font-size:20px;font-weight:800;letter-spacing:.2px}
   #npAuthor{font-size:14px;color:var(--muted);font-weight:600}
-  #npDesc{
-    margin-top:8px; font-size:14px; line-height:1.5; color:var(--text);
-    max-height:92px; overflow:auto; padding-right:6px;
-    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.2) transparent;
-  }
+  #npDesc{margin-top:8px; font-size:14px; line-height:1.5; color:var(--text); max-height:92px; overflow:auto; padding-right:6px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.2) transparent;}
   #npDesc::-webkit-scrollbar{width:8px} 
   #npDesc::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18); border-radius:8px}
 
@@ -140,17 +134,20 @@
   .tab-content{display:none}.tab-content.active{display:block}
   input.search{width:100%;padding:10px 14px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:12px;font-size:14px;margin-bottom:8px;}
   .hidden{display:none!important}
+
+  /* Chapters: make each row taller/cleaner */
+  #chList .item{ display:grid; grid-template-columns: 1fr auto; align-items:center; gap:12px; padding:12px 14px; min-height:58px; }
+  #chList .item .title{ font-size:15px; -webkit-line-clamp:1; }
+  #chList .item .sub.time{ font-size:12.5px; opacity:.9; }
+  #chList .item .icon{ padding:8px 12px; }
+
+  /* Bookmarks list */
   .bookmark-item .meta {cursor:pointer}
+  .bookmark-item .actions{display:flex; gap:8px; flex:0 0 auto}
 
   /* Mini player */
-  .mini{
-    position:fixed; left:0; right:0; bottom:0; z-index:1000;
-    background:rgba(15,36,34,.92); border-top:1px solid rgba(255,255,255,.08);
-    backdrop-filter: blur(8px);
-  }
-  .mini-wrap{
-    max-width:1200px; margin:0 auto; padding:10px 16px; display:flex; align-items:center; gap:12px; box-sizing:border-box;
-  }
+  .mini{ position:fixed; left:0; right:0; bottom:0; z-index:1000; background:rgba(15,36,34,.92); border-top:1px solid rgba(255,255,255,.08); backdrop-filter: blur(8px); }
+  .mini-wrap{ max-width:1200px; margin:0 auto; padding:10px 16px; display:flex; align-items:center; gap:12px; box-sizing:border-box; }
   .mini-left{display:flex; align-items:center; gap:10px; min-width:0; flex:1}
   .mini-cover{width:40px;height:40px;border-radius:8px;background:#0a1413;border:1px solid rgba(255,255,255,.08);object-fit:cover;flex:none}
   .mini-meta{min-width:0; display:flex; flex-direction:column}
@@ -463,6 +460,7 @@
     mini.title.textContent = title;
     mini.author.textContent = artist;
   }
+
   function renderLib(filter = ''){
     const root=$('lib'); root.innerHTML='';
     const filteredLib = library.filter(item => {
@@ -509,6 +507,7 @@
       root.appendChild(row);
     });
   }
+
   function renderChapters(list, durationSec){
     const root = $('chList'); root.innerHTML='';
     if(!list?.length){
@@ -536,6 +535,7 @@
     $('prevCh').disabled = $('nextCh').disabled = false;
     updateChapterMarkers(list);
   }
+
   function updateChapterMarkers(chapters){
     const el = $('chMarkers'); el.innerHTML='';
     const dur = isFinite(audio.duration) ? audio.duration : null;
@@ -549,6 +549,7 @@
       el.appendChild(m);
     });
   }
+
   function renderBookmarks(bookId) {
     const root = $('bookmarks'); root.innerHTML = '';
     const book = library.find(b => b.id === bookId);
@@ -558,17 +559,27 @@
     }
     book.bookmarks.sort((a,b)=>a.time-b.time).forEach((bm,i)=>{
       const item=document.createElement('div'); item.className='item bookmark-item'; item.style.cursor='pointer';
-      const m=document.createElement('div'); m.className='meta grow'; m.onclick=()=>{ audio.currentTime=bm.time; audio.play(); };
-      const t=document.createElement('div'); t.className='title'; t.textContent=`Bookmark at ${fmt(bm.time)}`;
-      m.appendChild(t);
-      const delBtn=document.createElement('button'); delBtn.className='icon'; delBtn.textContent='🗑️'; delBtn.onclick=(ev)=>{ ev.stopPropagation(); book.bookmarks.splice(i,1); saveLib(); renderBookmarks(bookId); };
-      item.appendChild(m); item.appendChild(delBtn); root.appendChild(item);
+      const m=document.createElement('div'); m.className='meta grow';
+      m.onclick=()=>{ audio.currentTime=bm.time; audio.play(); };
+      const titleText = bm.title && bm.title.trim() ? bm.title : `Bookmark at ${fmt(bm.time)}`;
+      const t=document.createElement('div'); t.className='title'; t.textContent=titleText;
+      const sub=document.createElement('div'); sub.className='sub'; sub.textContent=fmt(bm.time);
+      m.appendChild(t); m.appendChild(sub);
+
+      const actions=document.createElement('div'); actions.className='actions';
+      const editBtn=document.createElement('button'); editBtn.className='icon'; editBtn.title='Edit title'; editBtn.textContent='✎';
+      editBtn.onclick=(ev)=>{ ev.stopPropagation(); const cur = titleText; const next = prompt('Edit bookmark title:', cur); if (next!==null){ bm.title = next.trim(); saveLib(); renderBookmarks(bookId); } };
+      const delBtn=document.createElement('button'); delBtn.className='icon'; delBtn.title='Delete'; delBtn.textContent='🗑️';
+      delBtn.onclick=(ev)=>{ ev.stopPropagation(); book.bookmarks.splice(i,1); saveLib(); renderBookmarks(bookId); };
+
+      actions.appendChild(editBtn); actions.appendChild(delBtn);
+      item.appendChild(m); item.appendChild(actions); root.appendChild(item);
     });
   }
 
   function chapterIndexAt(chapters, t){ if(!chapters?.length) return -1; let idx=-1; for(let i=0;i<chapters.length;i++){ if(t+0.001>=chapters[i].start) idx=i; else break; } return idx; }
-  function prevChapter(){ const item = library.find(x=>x.id===currentId); if(!item||!item.meta?.chapters?.length) return; const idx = chapterIndexAt(item.meta.chapters, audio.currentTime||0); const target = idx>0 ? item.meta.chapters[idx-1].start : 0; audio.currentTime = target; audio.play().catch(()=>{}); }
-  function nextChapter(){ const item = library.find(x=>x.id===currentId); if(!item||!item.meta?.chapters?.length) return; const idx = chapterIndexAt(item.meta.chapters, audio.currentTime||0); const target = (idx+1 < item.meta.chapters.length) ? item.meta.chapters[idx+1].start : audio.duration || (item.duration||0); if (isFinite(target)) { audio.currentTime = target; audio.play().catch(()=>{}); } }
+  function prevChapter(){ const item = library.find(x=>x.id===currentId); if(!item||!item.meta?.chapters?.length) return; const idx = chapterIndexAt(item.meta.chapters, (audio.currentTime||0)); const target = idx>0 ? item.meta.chapters[idx-1].start : 0; audio.currentTime = target; audio.play().catch(()=>{}); }
+  function nextChapter(){ const item = library.find(x=>x.id===currentId); if(!item||!item.meta?.chapters?.length) return; const idx = chapterIndexAt(item.meta.chapters, (audio.currentTime||0)); const target = (idx+1 < item.meta.chapters.length) ? item.meta.chapters[idx+1].start : audio.duration || (item.duration||0); if (isFinite(target)) { audio.currentTime = target; audio.play().catch(()=>{}); } }
 
   // ---------- Add / Reconnect / Play ----------
   async function addFiles(list){
@@ -618,9 +629,7 @@
   function flushProgress(){
     const item = library.find(x=>x.id===currentId);
     if (!item || !isFinite(audio.currentTime)) return;
-    // Only set if duration > 0, but always save object in case other fields changed
     item.lastPos = Math.max(0, audio.currentTime || 0);
-    // Also keep an up-to-date duration if we have it
     if (isFinite(audio.duration) && audio.duration > 0) item.duration = audio.duration;
     saveLib();
   }
@@ -674,7 +683,6 @@
     }
 
     audio.src = item.srcURL;
-    // Sync speed/vol both main and mini
     audio.playbackRate = Number(prefs.speed||1); audio.volume = Number(prefs.vol||1);
     $('speed').value = audio.playbackRate; $('speedVal').textContent = audio.playbackRate.toFixed(1)+'×';
     $('vol').value = audio.volume; $('volVal').textContent = Math.round(audio.volume*100)+'%';
@@ -706,12 +714,11 @@
       const pct = dur? Math.min(100, (audio.currentTime||0)/dur*100):0;
       $('played').style.width = pct+'%';
       $('seek').value = pct;
-      // Mini sync
       mini.cur.textContent = fmt(audio.currentTime||0);
       mini.seek.value = pct.toFixed(2);
-
-      item.lastPos = audio.currentTime||0;
-      if (!item.saveTimeout) { item.saveTimeout = setTimeout(()=>{ saveLib(); item.saveTimeout=null; }, 500); }
+      const itm = library.find(x=>x.id===currentId);
+      if (itm) itm.lastPos = audio.currentTime||0;
+      if (!itm.saveTimeout) { itm.saveTimeout = setTimeout(()=>{ saveLib(); itm.saveTimeout=null; }, 500); }
       updateRing();
     };
     audio.onprogress = ()=>{
@@ -734,7 +741,7 @@
   $('vol').addEventListener('input', e=>{ const v=Number(e.target.value); audio.volume=v; $('volVal').textContent=Math.round(v*100)+'%'; prefs.vol=v; savePrefs(); mini.vol.value=v; });
   $('seek').addEventListener('input', e=>{ const dur=isFinite(audio.duration)?audio.duration:0; if(!dur) return; const pct=Number(e.target.value); audio.currentTime = (pct/100)*dur; });
 
-  // Mini player controls (with speed/vol)
+  // Mini player controls
   mini.play.onclick = ()=>{ if (!audio.src){ if (library.length) loadAndPlay(library[0].id); return; } if(audio.paused) audio.play(); else audio.pause(); };
   mini.prevCh.onclick = ()=> prevChapter();
   mini.nextCh.onclick = ()=> nextChapter();
@@ -783,8 +790,10 @@
     const book = library.find(b => b.id === currentId);
     if (!book || !isFinite(audio.currentTime)) return;
     if (!book.bookmarks) book.bookmarks = [];
-    if (book.bookmarks.some(bm => Math.floor(bm.time) === Math.floor(audio.currentTime))) return;
-    book.bookmarks.push({ time: audio.currentTime });
+    const t = audio.currentTime;
+    // avoid duplicates at the same second
+    if (book.bookmarks.some(bm => Math.floor(bm.time) === Math.floor(t))) return;
+    book.bookmarks.push({ time: t, title: `Bookmark at ${fmt(t)}` });
     saveLib(); renderBookmarks(currentId);
   });
 
@@ -840,17 +849,18 @@
     } catch(err){ console.error(err); setStatus('Failed to import chapters.', true); }
   });
 
-  // Flush progress on tab hide/close to ensure hosting environments persist last position
+  // Flush progress on tab hide/close (works reliably when hosted)
   document.addEventListener('visibilitychange', ()=>{ if (document.hidden) flushProgress(); });
-  window.addEventListener('beforeunload', ()=>{ flushProgress(); });
+  window.addEventListener('pagehide', flushProgress);
+  window.addEventListener('beforeunload', flushProgress);
 
   // Init
   loadLib();
   renderLib();
 
-  // Now Playing default cover to avoid alt overlap
+  // Now Playing default cover
   $('npCover').src = (function(){
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#00b3a4'/><stop offset='100%' stop-color='#1dd6c8'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/></svg>`;
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><defs><linearGradient id='g' x1='0' y='0' x2='1' y2='1'><stop offset='0%' stop-color='#00b3a4'/><stop offset='100%' stop-color='#1dd6c8'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/></svg>`;
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   })();
 
@@ -865,7 +875,6 @@
   })();
 
   if (prefs.lastId && library.some(x=>x.id===prefs.lastId)) {
-    // Preload last item (paused)
     loadAndPlay(prefs.lastId).then(()=>audio.pause()).catch(()=>{});
   }
 
@@ -910,7 +919,6 @@
       } catch(e){ /* fast path */ }
     }
 
-    // Generic formats: MM (handles MP3/OGG/OPUS/FLAC/WAV etc.)
     try {
       const mm = await window.musicMetadata.parseBlob(file);
       const common = mm.common || {};
@@ -924,14 +932,12 @@
       if (!meta.coverURL && common.picture?.length) {
         const pic=common.picture[0]; const blob=new Blob([pic.data], {type: pic.format}); meta.coverURL = URL.createObjectURL(blob);
       }
-    } catch(e){ /* ignore for speed; fallback below */ }
+    } catch(e){}
 
-    // MP3 CHAP/CTOC fallback
     if (isMp3 && (!meta.chapters || meta.chapters.length===0)) {
       try { const chap = await parseMP3Chapters(file); if (chap?.length) meta.chapters = chap; } catch(e){}
     }
 
-    // jsmediatags fallback for basic tags/cover if still missing
     if (!meta.coverURL || !meta.title || !meta.artist) {
       try {
         const tags = await new Promise((resolve, reject) => window.jsmediatags.read(file, { onSuccess: resolve, onError: reject }));
@@ -1044,7 +1050,6 @@
     }
     if (chapters.length) return { tags, cover, chapters };
 
-    // QuickTime chapter track
     const traks = kids.filter(b=>b.type==='trak').map(trak => parseTrak(dv, trak, children, hdr, u32, typ, u64));
     const byId = new Map(traks.map(t=>[t.id,t]));
     const audioTracks = traks.filter(t=>t.hdlr==='soun');
